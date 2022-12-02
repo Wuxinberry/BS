@@ -131,7 +131,7 @@
           </FormItem>
           <FormItem>
             <Upload action="//jsonplaceholder.typicode.com/posts/">
-              <Button size='large' icon="ios-cloud-upload-outline">Upload files</Button>
+              <Button size='large' icon="ios-cloud-upload-outline">上传场景图</Button>
             </Upload>
           </FormItem>
           <FormItem>
@@ -143,7 +143,7 @@
         <SceneTable style='margin-left: auto; margin-right: auto;'/>
       </div>
     </Content>
-    <Footer>{{ copyright }}</Footer>
+    <Footer style='width:100%; height:25px; padding:3px; position: fixed; bottom: 0px'>{{ copyright }}</Footer>
   </Layout>
 </template>
 
