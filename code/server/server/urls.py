@@ -15,10 +15,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from . import views
+from . import views, user, scene
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('runoob/', views.runoob),
     path('', views.hello),
+    path('user/signup', user.signup),
+    path('user/login', user.login),
+    path('scene/create', scene.create),
+    path('scene/equip/add', scene.add_equipment),
+    path('scene/equip/edit', scene.edit_equipment),
+    path('scene/equip/delete', scene.delete_equipment),
 ]
