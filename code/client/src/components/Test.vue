@@ -3,14 +3,15 @@
     <Header style="fontSize: 3em; fontWeight: bolder; color: white">
       智能家居管理系统
       <Dropdown class="Dropdown mHeader">
-        <Avatar icon="ios-person" size="large" />
+        <Avatar v-show="logState" icon="ios-person" size="large" style="background-color: #87d468"/>
+        <Avatar v-show="enableCreateScene" icon="ios-person" size="large" />
         <template #list>
           <DropdownMenu>
             <DropdownItem>
               <Button @click="showRegModal = true" type="text">注册</Button>
             </DropdownItem>
             <DropdownItem v-if="logState">
-              <Button type="text">登出</Button>
+              <Button @click="handleLogOut" type="text">登出</Button>
             </DropdownItem>
             <DropdownItem v-else>
               <Button @click="showLogInModal = true" type="text">登录</Button>
@@ -122,25 +123,23 @@
       </Dropdown>
     </Header>
     <!-- 场景创建表单 -->
-    <Content>
+    <Content style="background:#fff">
       <div style="margin: 20px; float: right">
-        <Form inline :model="sceneInfo">
+        <Form inline :model="sceneInfo" >
           <FormItem>
             <Input size="large" placeholder="场景名称需唯一"
               v-model='sceneInfo.sceneName'><template #prepend>场景名称</template></Input>
           </FormItem>
           <FormItem>
-            <Upload action="//jsonplaceholder.typicode.com/posts/">
-              <Button size='large' icon="ios-cloud-upload-outline">上传场景图</Button>
-            </Upload>
+            <input type="file" @change="getImageFile" id="img">
           </FormItem>
           <FormItem>
-            <Button size="large" type="primary" @click='handleCreateScene()'>创建场景</Button>
+            <Button size="large" type="primary" @click='upload' :disabled="enableCreateScene">创建场景</Button>
           </FormItem>
         </Form>
       </div>
-      <div style='width: 90%; margin-left: auto; margin-right: auto;'>
-        <SceneTable style='margin-left: auto; margin-right: auto;'/>
+      <div style='width: 90%; margin-left:auto; margin-right:auto' >
+        <SceneTable :sceneData="sceneData" style="margin-left:auto; margin-right:auto" />
       </div>
     </Content>
     <Footer style='width:100%; height:25px; padding:3px; position: fixed; bottom: 0px'>{{ copyright }}</Footer>
@@ -150,6 +149,7 @@
 <script>
 /* eslint-disable */
 import SceneTable from './SceneTable.vue'
+import axios from 'axios'
 export default {
   name: "Test",
   components: {
@@ -168,13 +168,24 @@ export default {
         password2: "",
       },
       logInInfo: {
+        uid: "",
         userName: "",
         password: "",
       },
       sceneInfo: {
         sceneName: "",
-      }
+        file: null,
+      },
+      sceneData: [],
     };
+  },
+  computed: {
+    enableCreateScene() {
+      return this.logState == true ? false : true
+    },
+    logIconColor() {
+      return this.logState == true ? "blue" : "gray"
+    }
   },
   methods: {
     handleRegister() {
@@ -214,8 +225,9 @@ export default {
         });
         return;
       }
-      if (phoneNumber.length != 11) {
-        this.$Message["error"]({ background: true, content: "手机号不合法" });
+      let phoneReg = /^[1][3,4,5,7,8][0-9]{9}$/ // 检验手机号是否合法
+      if (phoneNumber.length != 11 || !phoneReg.test(phoneNumber)) {
+        this.$Message["error"]({ background: true, content: "手机号不合法！" });
         return;
       }
       if (password1 !== password2) {
@@ -232,14 +244,23 @@ export default {
         });
         return;
       }
-      // todo 后端传数据、校验手机号和用户名的唯一性、注册用户并反馈
-
-      this.$Message["success"]({ background: true, content: "注册成功" });
+      axios.post('http://127.0.0.1:8000/user/signup', this.userInfo)
+        .then((res)=>{
+          res = res.data.state 
+          if (res === 1) {
+            this.$Message["warning"]({ background: true, content: "用户名已存在，请使用其他用户名" });
+          } else if (res === 2) {
+            this.$Message["warning"]({ background: true, content: "手机号已存在，请使用其他手机号" });
+          } else {
+            this.$Message["success"]({ background: true, content: "注册成功" });
+            this.showRegModal = false
+          }
+        })
+      
     },
     handleLogin() {
       let userName = this.logInInfo.userName;
       let password = this.logInInfo.password;
-      console.log(this.logInInfo);
       if (userName === undefined || userName.length == 0) {
         this.$Message["error"]({
           background: true,
@@ -251,12 +272,64 @@ export default {
         this.$Message["error"]({ background: true, content: "密码不可以为空" });
         return;
       }
-      // todo 校验用户名和密码匹配 返回登录结果
+      axios.post('http://127.0.0.1:8000/user/login', this.logInInfo).then(res=>{
+        let logRes = res.data.state
+        if (logRes == 2) {
+          this.$Message["error"]({ background: true, content: "密码不正确" });
+        } else if (logRes == 1) {
+          this.$Message["error"]({ background: true, content: "用户不存在，请检查用户名" });
+        } else {
+          this.$Message["success"]({ background: true, content: "登录成功" });
+          this.logState = true
+          this.logInInfo.uid = res.data.id
+          console.log(res.data.sceneData)
+          this.sceneData = res.data.sceneData
+          this.showLogInModal = false
+        }
+      })
     },
-    handleCreateScene() {
-      // todo OSS
-      // todo implement upload
-      // todo implement server store
+    handleLogOut() {
+      this.logState = false
+      this.logInInfo.uid = ""
+      this.logInInfo.userName = ""
+      this.logInInfo.password = ""
+      this.$Message["info"]({ background: true, content: "成功登出"})
+    },
+    getImageFile:function(e) {
+      this.sceneInfo.file = e.target.files[0]
+    },
+    upload() {
+      let data = new FormData()
+      if (this.logInInfo.userName === undefined || this.logInInfo.userName === "") {
+        this.$Message['warning']({background: true, content:"请先登录！"})
+        return 
+      }
+      data.append('userName', this.logInInfo.userName)
+      if (this.logInInfo.sceneName === undefined || this.logInInfo.sceneName === "") {
+        this.$Message['warning']({background: true, content:"请先完善场景名称！"})
+        return 
+      }
+      data.append('sceneName', this.sceneInfo.sceneName)
+      data.append('uid', this.logInInfo.uid)
+      if (this.sceneInfo.file === null) {
+        this.$Message['warning']({background: true, content:"请先上传文件！"})
+        return 
+      }
+      data.append('oriImage', this.sceneInfo.file)
+      this.$Message['info']({background: true, content:"正在上传文件~"})
+      axios.post('http://127.0.0.1:8000/scene/create', data)
+      .then(res => {
+        let state = res.data
+        if (state == 1) {
+          this.$Message['warning']({ background: true, content: "场景名已经存在，请使用其他名称"})
+        } else if (state == 2) {
+          this.$Message['error']({ background: true, content: "图片上传失败，请检查网络情况"})
+        } else {
+          this.$Message['success']({ background: true, content: "场景创建成功"})
+          this.sceneInfo.sceneName = ""
+          this.sceneInfo.file = null
+        }
+      })
     }
   },
 };

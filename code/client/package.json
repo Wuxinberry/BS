@@ -14,7 +14,9 @@
     "build": "node build/build.js"
   },
   "dependencies": {
+    "axios": "^1.2.0",
     "iview": "^3.5.4",
+    "tui-image-editor": "^3.15.3",
     "vue": "^2.5.2",
     "vue-router": "^3.0.1"
   },
