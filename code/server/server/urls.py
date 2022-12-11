@@ -24,6 +24,7 @@ urlpatterns = [
     path('user/signup', user.signup),
     path('user/login', user.login),
     path('scene/create', scene.create),
+    path('scene/edit', scene.edit),
     path('scene/equip/add', scene.add_equipment),
     path('scene/equip/edit', scene.edit_equipment),
     path('scene/equip/delete', scene.delete_equipment),
