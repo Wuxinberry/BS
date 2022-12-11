@@ -305,7 +305,7 @@ export default {
         return 
       }
       data.append('userName', this.logInInfo.userName)
-      if (this.logInInfo.sceneName === undefined || this.logInInfo.sceneName === "") {
+      if (this.sceneInfo.sceneName === undefined || this.sceneInfo.sceneName === "") {
         this.$Message['warning']({background: true, content:"请先完善场景名称！"})
         return 
       }
@@ -328,6 +328,8 @@ export default {
           this.$Message['success']({ background: true, content: "场景创建成功"})
           this.sceneInfo.sceneName = ""
           this.sceneInfo.file = null
+          this.file = null
+          this.sceneData = res.data.sceneData
         }
       })
     }
